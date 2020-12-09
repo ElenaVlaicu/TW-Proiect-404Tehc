@@ -25,11 +25,5 @@ router.route("/teams/:teamId/projects").post((req, resp) => {
     createProject(body.name, body.repo, req.params.teamId, body.userIds).then((result => resp.json(result)));
 });
 
-
-//test
-
-//testare de la amb pt voi 
-
-
 var port = 8000;
 app.listen(port, ()=> console.log("server is listening ..."));
