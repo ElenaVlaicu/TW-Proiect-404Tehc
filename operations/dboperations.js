@@ -1,5 +1,4 @@
 import sql from "mssql"
-import { config } from "../config/dbconfig.js"
 import { User, seqelize, Team, TeamUser, Project, ProjectUser} from "../sequelize/sequelize.js"
 
 
