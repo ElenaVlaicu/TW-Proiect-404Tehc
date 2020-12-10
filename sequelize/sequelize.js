@@ -1,14 +1,15 @@
 import pkg from "sequelize";
 const {Sequelize, DataTypes, Model } = pkg;
+import { port, username, password } from "../settings_local.js"
 
 
 export const seqelize = new Sequelize({
     dialect: 'mssql',
     host: 'localhost',
-    username: 'sa',
-    password: 'sa',
+    username: username,
+    password: password,
     database: 'database',
-    port: "64397",
+    port: port,
     options: {
         trustedConnection: true,
         enableArithAbort: true
