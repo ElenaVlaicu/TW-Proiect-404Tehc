@@ -1,5 +1,5 @@
 import {app, router} from "./init/serverInit.js"
-import {createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester} from "./operations/dboperations.js"
+import {createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester, addBugToProject, assignBugToUser} from "./operations/dboperations.js"
 
 
 router.route("/users").post((req, resp) => {
@@ -39,9 +39,20 @@ router.route("/project/:projectId/users/:userId").post((req, resp) => {
 });
 
 
+router.route("/projects/:projectId/bugs").post((req,resp)=>{
+    let body=req.body
+    addBugToProject(body.severity,body.priority,body.description,req.params.projectId).then((result=>resp.json(result))).catch(err =>
+        {
+            console.log(err)
+        })
+});
 
 
-
+router.route("/bugs/:bugId/users/:userId").put((req,resp)=>{
+    assignBugToUser(req.params.userId,req.params.bugId).then((result)=>resp.json(result)).catch(err =>{
+        console.log(err)
+    })
+});
 
 
 

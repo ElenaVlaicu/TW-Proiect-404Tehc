@@ -1,65 +1,65 @@
 import sql from "mssql"
-import { User, seqelize, Team, TeamUser, Project, ProjectUser} from "../sequelize/sequelize.js"
+import { User, seqelize, Team, TeamUser, Project, ProjectUser, Bug, statusEnum, priorityEnum, severityEnum } from "../sequelize/sequelize.js"
 
 
 export async function createUser(email, password, firstName, lastName) {
-    try{
-       const user = await User.create({
-           email: email,
-           password: password,
-           firstName: firstName,
-           lastName: lastName
-       });
-       console.log(user.toJSON());
-       return user;
+    try {
+        const user = await User.create({
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName
+        });
+        console.log(user.toJSON());
+        return user;
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
 export async function listUsers(teamId) {
-    try{
+    try {
         var users = []
         console.log(`teamId: ${teamId}`)
-        if (teamId == null){
+        if (teamId == null) {
             users = User.findAll()
-        }else{
+        } else {
             users = User.findAll({
                 where: {
                     "$teamuser.teamId$": teamId
                 }
             })
         }
-       return users;
+        return users;
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
 export async function addUserToTeam(teamId, userId) {
-    try{
-       await TeamUser.create({
-           teamId: teamId,
-           userId: userId
-       });
-       console.log("User added to team");
+    try {
+        await TeamUser.create({
+            teamId: teamId,
+            userId: userId
+        });
+        console.log("User added to team");
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
 export async function createProject(name, repo, teamId, userIds) {
-    try{
-       const project = await Project.create({
-           name: name,
-           repo: repo,
-           teamId: teamId
-       });
-       console.log("Created project");
-       if (userIds != null){
+    try {
+        const project = await Project.create({
+            name: name,
+            repo: repo,
+            teamId: teamId
+        });
+        console.log("Created project");
+        if (userIds != null) {
             userIds.forEach(userId => {
                 ProjectUser.create({
                     projectId: project.id,
@@ -69,44 +69,78 @@ export async function createProject(name, repo, teamId, userIds) {
                 console.log("User added to project")
             })
         }
-       return project;
+        return project;
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
 export async function addUserToProject(projectId, userId) {
-    try{
-       const project = await Project.findByPk(projectId);
-       
-       ProjectUser.create({
+    try {
+        const project = await Project.findByPk(projectId);
+
+        ProjectUser.create({
             projectId: project.id,
             userId: userId,
             isTester: false
         })
         console.log("User added to project")
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
 
 export async function addUserAsTester(projectId, userId) {
-    try{
-       const project = await Project.findByPk(projectId);
-       
-       ProjectUser.create({
+    try {
+        const project = await Project.findByPk(projectId);
+
+        ProjectUser.create({
             projectId: project.id,
             userId: userId,
             isTester: true
         })
         console.log("Tester added to project")
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
+export async function addBugToProject(severity, priority, description, projectId) {
+    try {
+        const project = await Project.findByPk(projectId);
 
+        const bug = Bug.create({
+            projectId: project.id,
+            severity: severity,
+            priority: priority,
+            description: description,
+            status: statusEnum.unassigned
+        })
+        console.log("Added bug to project")
+        return bug;
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+export async function assignBugToUser(userId, bugId) {
+    try {
+        const currentBug = await Bug.findByPk(bugId)
+        if (currentBug.userId != null) {
+            throw Error("Bug is already assigned")
+        }
+        currentBug.userId = userId
+        currentBug.status = statusEnum.inProgress
+        await (await currentBug).save()
+
+        return currentBug;
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
