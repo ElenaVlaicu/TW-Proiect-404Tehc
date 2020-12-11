@@ -75,3 +75,38 @@ export async function createProject(name, repo, teamId, userIds) {
         console.log(error);
     }
 }
+
+export async function addUserToProject(projectId, userId) {
+    try{
+       const project = await Project.findByPk(projectId);
+       
+       ProjectUser.create({
+            projectId: project.id,
+            userId: userId,
+            isTester: false
+        })
+        console.log("User added to project")
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+
+export async function addUserAsTester(projectId, userId) {
+    try{
+       const project = await Project.findByPk(projectId);
+       
+       ProjectUser.create({
+            projectId: project.id,
+            userId: userId,
+            isTester: true
+        })
+        console.log("Tester added to project")
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+
