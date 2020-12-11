@@ -78,8 +78,6 @@ export async function createProject(name, repo, teamId, userIds) {
 
 export async function addUserToProject(projectId, userId) {
     try{
-       console.log(`------ProjectID: ${projectId}------`)
-       console.log(`------UserID: ${userId}------`)
        const project = await Project.findByPk(projectId);
        
        ProjectUser.create({
