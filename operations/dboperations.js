@@ -144,3 +144,19 @@ export async function assignBugToUser(userId, bugId) {
         console.log(error);
     }
 }
+
+export async function setBugIsFixed(bugId, commit) {
+    try{
+        const currentBug = await Bug.findByPk(bugId)
+        if (currentBug.status != statusEnum.inProgress){
+            throw Error("Cannot resolve a bug that is not assigned")
+        }
+        currentBug.status = statusEnum.finished
+        currentBug.commit = commit
+        await (await currentBug).save()
+        return currentBug;
+    }
+    catch(error){
+        console.log(error);
+    }
+}
