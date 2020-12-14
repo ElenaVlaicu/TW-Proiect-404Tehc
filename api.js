@@ -1,5 +1,5 @@
 import {app, router} from "./init/serverInit.js"
-import {createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester, addBugToProject, assignBugToUser} from "./operations/dboperations.js"
+import {createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester, addBugToProject, assignBugToUser, setBugIsFixed} from "./operations/dboperations.js"
 
 
 router.route("/users").post((req, resp) => {
@@ -54,6 +54,11 @@ router.route("/bugs/:bugId/users/:userId").put((req,resp)=>{
     })
 });
 
+router.route("/bugs/:bugId/resolve").put((req, res)=>{
+    setBugIsFixed(req.params.bugId, req.body.commit).then((result)=>res.json(result)).catch(err =>{
+        console.log(err)
+    })
+});
 
 
 
