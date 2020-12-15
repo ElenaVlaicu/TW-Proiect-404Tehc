@@ -28,18 +28,38 @@ export async function createUser(email, password, firstName, lastName) {
     }
 }
 
-export async function listUsers(teamId) {
+export async function listUsers(teamId,projectId) {
     try {
         var users = []
         console.log(`teamId: ${teamId}`)
-        if (teamId == null) {
-            users = User.findAll()
-        } else {
+        if(projectId != null){
             users = User.findAll({
-                where: {
-                    "$teamuser.teamId$": teamId
-                }
+                include: [
+                    {
+                        required: true,
+                        model: Project,
+                        through: { where: {
+                            projectId: projectId
+                        }}
+                    }
+                ]
             })
+         }
+            else if(teamId != null){
+            users = User.findAll({
+                include: [
+                    {
+                        required: true,
+                        model: Team,
+                        through: { where: {
+                            teamId: teamId
+                        }}
+                    }
+                ]
+            })
+        }
+        else if (teamId == null) {
+            users = User.findAll()
         }
         return users;
     }
