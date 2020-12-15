@@ -20,12 +20,10 @@ export const seqelize = new Sequelize({
     },
 });
 
-
 export class Team extends Model { };
 Team.init({
     name: DataTypes.STRING
 }, { sequelize: seqelize, modelName: "team" });
-
 
 seqelize.authenticate().then(() => { console.log("Sequelize has succesfully connected to the database") })
     .catch(err => console.error(err));
@@ -46,7 +44,7 @@ export class TeamUser extends Model { };
 TeamUser.init({
 }, { sequelize: seqelize, modelName: "teamUser" });
 
-User.belongsToMany(Team, { through: TeamUser });
+User.belongsToMany(Team, { through: TeamUser});
 
 export class Project extends Model { };
 Project.init({
@@ -72,4 +70,5 @@ ProjectUser.init({
     isTester: DataTypes.BOOLEAN
 }, { sequelize: seqelize, modelName: "projectUser" });
 
-Project.belongsToMany(User, { through: ProjectUser });
+Project.belongsToMany(User, { through: ProjectUser});
+User.belongsToMany(Project, { through: ProjectUser})

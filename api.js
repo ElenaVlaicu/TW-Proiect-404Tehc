@@ -1,5 +1,6 @@
 import {app, router} from "./init/serverInit.js"
 import {createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester, addBugToProject, assignBugToUser, setBugIsFixed} from "./operations/dboperations.js"
+import { Project, Team, TeamUser } from "./sequelize/sequelize.js";
 
 
 router.route("/users").post((req, resp) => {
@@ -12,7 +13,7 @@ router.route("/users").post((req, resp) => {
 });
 
 router.route("/users").get((req, resp) => {
-    listUsers(req.query.teamId).then((result => resp.json(result)));
+    listUsers(req.query.teamId, req.query.projectId).then((result => resp.json(result)));
 });
 
 router.route("/teams/users").post((req, resp) => {
@@ -60,6 +61,20 @@ router.route("/bugs/:bugId/resolve").put((req, res)=>{
     })
 });
 
+router.route("/project/:projectId").delete((req,res)=>{
+    Project.findByPk(req.params.projectId).then(record => {
+        record.destroy();
+    }).then(() => res.json(`The project with the id ${req.params.projectId} was deleted successfully.`))
+    .catch(err => {console.log(err)})
+});
+
+router.route("/users/:userId/teams/:teamId").delete((req,res)=>{
+    TeamUser.destroy({where: {
+        teamId: req.params.teamId,
+        userId: req.params.userId
+    }}).then(() => res.json(`The user from the team with id ${req.params.teamId} was deleted successfully.`))
+    .catch(err => {console.log(err)})
+})
 
 
 var port = 8000;
