@@ -4,34 +4,38 @@ const { Op } = pkg;
 import { User, seqelize, Team, TeamUser, Project, ProjectUser, Bug, statusEnum, priorityEnum, severityEnum } from "../sequelize/sequelize.js"
 
 
+//creaza un user
 export async function createUser(email, password, firstName, lastName) {
-    try {
+        //cautam daca exista deja un user cu acest email (mail-ul este unic pt fiecare user)
         const existingUserWithEmail = await User.findOne({
             where: {
                 email: email
             }
         })
+
+        //daca exista deja un user cu acest mail se arunca eroarea
         if (existingUserWithEmail != null){
             throw Error("An user with this email already exists")
         }
+
+        //daca nu exista deja userul, se creaza
         const user = await User.create({
             email: email,
             password: password,
             firstName: firstName,
             lastName: lastName
         });
+
         console.log(user.toJSON());
         return user;
     }
-    catch (error) {
-        console.log(error);
-    }
-}
 
+//afiseaza toti userii, sau doar userii dintr-un proiect sau doar userii dintr-o echipa
+//in functie de parametrii primiti
 export async function listUsers(teamId,projectId) {
     try {
+        //daca exista proiectul specificat, se doreste afisarea tuturor utilizatorilor din proiect
         var users = []
-        console.log(`teamId: ${teamId}`)
         if(projectId != null){
             users = User.findAll({
                 include: [
@@ -45,6 +49,7 @@ export async function listUsers(teamId,projectId) {
                 ]
             })
          }
+         //daca exista echipa specificata, se doreste afisarea utilizatorilor din echipa
             else if(teamId != null){
             users = User.findAll({
                 include: [
@@ -58,6 +63,7 @@ export async function listUsers(teamId,projectId) {
                 ]
             })
         }
+        //daca nu este specificata o echipa, se afiseaza toti utilizatorii din toate echipele
         else if (teamId == null) {
             users = User.findAll()
         }
@@ -68,17 +74,27 @@ export async function listUsers(teamId,projectId) {
     }
 }
 
+//adauga un utilizator intr-o echipa
 export async function addUserToTeam(teamId, userId) {
-    try {
+
+        //verificam daca utilizatorul nu este deja in aceasta echipa
         const userAlreadyInTeam = await TeamUser.findOne({
             where:{
                 teamId: teamId,
                 userId: userId
             }
         })
+
+        //verificam daca utilizatorul exista in baza de date
+        const existingUser = await User.findByPk(userId);
+        if(existingUser==null){
+            throw Error("This user does not exists")
+        }
         if (userAlreadyInTeam != null){
             throw Error("This user is already in this team")
         }
+
+        //se adauga o inregistrare in tabela de legatura
         await 
         await TeamUser.create({
             teamId: teamId,
@@ -86,13 +102,10 @@ export async function addUserToTeam(teamId, userId) {
         });
         console.log("User added to team");
     }
-    catch (error) {
-        console.log(error);
-    }
-}
 
+//se creaza un nou proiect pentru o anumita echipa
 export async function createProject(name, repo, teamId, userIds) {
-    try {
+        //verificam daca nu exista deja un proiect cu acest nume
         const alreadyProjectWithName = await Project.findOne({
             where:{
                 name: name,
@@ -102,14 +115,18 @@ export async function createProject(name, repo, teamId, userIds) {
         if (alreadyProjectWithName != null){
             throw Error("There already is a project with this name in this team")
         }
+        //se creaza proiectul
         const project = await Project.create({
             name: name,
             repo: repo,
             teamId: teamId
         });
+
         if (userIds == null){
             userIds = []
         }
+
+        //verificam daca utilizatorii primiti ca parametru exista in baza de date
         const existingUsers = await User.findAll({
             where:{
                 id: {
@@ -117,15 +134,14 @@ export async function createProject(name, repo, teamId, userIds) {
                 }
             }
         })
-        const existingUsers2 = []
+        const existingUsersIds = []
         existingUsers.forEach(user => {
-            existingUsers2.push(user.id)
+            existingUsersIds.push(user.id)
         })
-        console.log(`qwe ${existingUsers2[0]}`)
         console.log("Created project");
         if (userIds != null) {
             userIds.forEach(userId => {
-                if (!existingUsers2.includes(userId)){
+                if (!existingUsersIds.includes(userId)){
                     throw Error(`Invalid user id: ${userId}`)
                 }
                 ProjectUser.create({
@@ -138,20 +154,23 @@ export async function createProject(name, repo, teamId, userIds) {
         }
         return project;
     }
-    catch (error) {
-        console.log(error);
-    }
-}
+   
 
+//adauga un user la un proiect specificat
 export async function addUserToProject(projectId, userId) {
-    try {
-        const project = await Project.findByPk(projectId);
 
+        //verificam daca exista proiectul
+        const project = await Project.findByPk(projectId);
+        if(project==null){
+            throw Error("This project does not exist")
+        }
+
+        //verificam ca userul sa existe deja in echipa proiectului
         const existingUsersInTeam = await TeamUser.findAll({
             where:{
                 teamId: project.teamId
             }
-        })
+        });
         const existingUsersInTeam2 = []
         existingUsersInTeam.forEach(teamUser => {
             existingUsersInTeam2.push(teamUser.userId)
@@ -167,21 +186,33 @@ export async function addUserToProject(projectId, userId) {
         })
         console.log("User added to project")
     }
-    catch (error) {
-        console.log(error);
-    }
-}
 
-
+//modificam statutul unui utilizator facandu-l tester
 export async function addUserAsTester(projectId, userId) {
-    try {
+
+         //verificam daca utilizatorul exista in baza de date
+         const existingUser = await User.findByPk(userId);
+         if(existingUser==null){
+             throw Error("This user does not exist")
+         }
+
+          //verificam daca proiectul exista in baza de date
+         const existingProject = await Project.findByPk(projectId);
+         if(existingProject==null){
+             throw Error("This project does not exist")
+         }
+
+        //cautam proiectul in care dorim sa adaugam un tester
         const project = await Project.findByPk(projectId);
 
+        //verificam ca userul pe care dorim sa il facem tester sa nu fie membru al echipei proiectului
         const existingUsersInTeam = await TeamUser.findAll({
             where:{
                 teamId: project.teamId
             }
         })
+
+        //ne cream un vector cu id-urile tuturor utilizatorilor din echipa
         const existingUsersInTeam2 = []
         existingUsersInTeam.forEach(teamUser => {
             existingUsersInTeam2.push(teamUser.userId)
@@ -189,7 +220,7 @@ export async function addUserAsTester(projectId, userId) {
         if (existingUsersInTeam2.includes(parseInt(userId))){
             throw Error("This user is already a member in the project's team")
         }
-
+        //se creaza o inregistrare in tabela de lagatura 
         ProjectUser.create({
             projectId: project.id,
             userId: userId,
@@ -197,13 +228,17 @@ export async function addUserAsTester(projectId, userId) {
         })
         console.log("Tester added to project")
     }
-    catch (error) {
-        console.log(error);
-    }
-}
 
+//adauga un bug intr-un proiect
 export async function addBugToProject(severity, priority, description, projectId) {
-    try {
+
+         //verificam daca proiectul exista in baza de date
+         const existingProject = await Project.findByPk(projectId);
+         if(existingProject==null){
+             throw Error("This project does not exist")
+         }
+
+        //verificam daca severitatea si prioritatea sunt valide conform enum-urilor
         const project = await Project.findByPk(projectId);
 
         if (!Object.keys(severityEnum).includes(severity)){
@@ -224,13 +259,23 @@ export async function addBugToProject(severity, priority, description, projectId
         console.log("Added bug to project")
         return bug;
     }
-    catch (error) {
-        console.log(error);
-    }
-}
 
+//se asigneaza un bug unui user
 export async function assignBugToUser(userId, bugId) {
-    try {
+
+         //verificam daca userul exista in baza de date
+         const existingUser = await User.findByPk(userId);
+         if(existingUser==null){
+             throw Error("This user does not exist")
+         }
+
+          //verificam daca bug-ul exista in baza de date
+          const existingBug = await Bug.findByPk(bugId);
+          if(existingBug==null){
+              throw Error("This bug does not exist")
+          }
+
+        //verificam daca userul este in proiectul unei echipe si daca bug-ul este deja asignat
         const currentBug = await Bug.findByPk(bugId)
         const projectUser = await ProjectUser.findOne({
             where: {
@@ -246,30 +291,36 @@ export async function assignBugToUser(userId, bugId) {
         if (currentBug.userId != null) {
             throw Error("Bug is already assigned")
         }
+
+        //schimbam statusul bug-ului
         currentBug.userId = userId
         currentBug.status = statusEnum.inProgress
         await (await currentBug).save()
 
         return currentBug;
-    }
-    catch (error) {
-        console.log(error);
-    }
 }
 
+//modificam statusul unui bug
 export async function setBugIsFixed(bugId, commit) {
-    try{
-        //TODO: check that the currentUser is the assiged user from the selected bug
+
+    //TODO: check that the currentUser is the assiged user from the selected bug
+    
+    //verificam daca bug-ul exista in baza de date
+    const existingBug = await Bug.findByPk(bugId);
+        if(existingBug==null){
+             throw Error("This bug does not exist")
+         }
+
+         //verificam ca bug-ul nu este deja asignat
         const currentBug = await Bug.findByPk(bugId)
         if (currentBug.status != statusEnum.inProgress){
-            throw Error("Cannot resolve a bug that is not assigned")
+            throw Error("Cannot resolve a bug that is not in progress")
         }
+
+        //modificam statusul bug-ului
         currentBug.status = statusEnum.finished
         currentBug.commit = commit
         await (await currentBug).save()
         return currentBug;
-    }
-    catch(error){
-        console.log(error);
-    }
 }
+
