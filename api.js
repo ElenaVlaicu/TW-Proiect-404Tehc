@@ -1,5 +1,5 @@
 import { app, router } from "./init/serverInit.js"
-import { createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester, addBugToProject, assignBugToUser, setBugIsFixed } from "./operations/dboperations.js"
+import { login, loginByToken, listProjects, listTeams, createUser, listUsers, addUserToTeam, createProject, addUserToProject, addUserAsTester, addBugToProject, assignBugToUser, setBugIsFixed, listBugs } from "./operations/dboperations.js"
 import { Project, Team, TeamUser } from "./sequelize/sequelize.js";
 
 //creaza un user
@@ -17,6 +17,16 @@ router.route("/users").post((req, resp) => {
 //afiseaza toti userii unei echipe
 router.route("/users").get((req, resp) => {
     listUsers(req.query.teamId, req.query.projectId).then((result => resp.json(result)));
+});
+
+router.route("/projects").get((req, res)=>{
+    listProjects(req.query.teamId)
+        .then((result => res.json(result)))
+        .catch((err) => { res.status(400).json({ message: err.message }) });
+});
+
+router.route("/teams").get((req, resp)=>{
+    listTeams().then((result => resp.json(result)));
 });
 
 //se adauga un user intr-o echipa
@@ -45,7 +55,15 @@ router.route("/users/:userId/projects/:projectId").post((req, resp) => {
 //un utilizator este inregistrat ca tester
 router.route("/project/:projectId/users/:userId").post((req, resp) => {
     addUserAsTester(req.params.projectId, req.params.userId)
-        .then((result => resp.json('Tester added to project')))
+        .then((result => resp.json(result)))
+        .catch((err) => { resp.status(400).json({ message: err.message }) })
+});
+
+
+//afiseaza toate bug-urile
+router.route("/bugs").get((req, resp) => {
+    listBugs(req.query.userId, req.query.projectId)
+        .then((result => resp.json(result)))
         .catch((err) => { resp.status(400).json({ message: err.message }) })
 });
 
@@ -97,7 +115,15 @@ router.route("/users/:userId/teams/:teamId").delete((req, res) => {
     })
       .then(()=> res.json(`The user was deleted successfully.`))
       .catch((err) => { res.status(400).json({ message: err.message }) });
-})
+});
+
+router.route("/login").post((req, res)=>{
+    login(req.body.email, req.body.password)
+    .then((result) => res.json(result))
+    .catch((err) => { res.status(400).json({ message: err.message }) })
+});
+
+
 
 
 var port = 8000;
