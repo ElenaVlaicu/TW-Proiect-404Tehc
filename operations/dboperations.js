@@ -74,6 +74,28 @@ export async function listUsers(teamId,projectId) {
     }
 }
 
+export async function listTeams(){
+    return await Team.findAll();
+}
+
+export async function listProjects(teamId){
+
+    //verificam daca exista echipa
+   
+    if (teamId==null){
+        return await Project.findAll();
+    }
+    else {
+        const team = await Team.findByPk(teamId);
+        if(team==null){
+            throw Error("This team does not exist")
+        }
+        return await Project.findAll({
+            where: {teamId: teamId}
+        });
+    }
+}
+
 //adauga un utilizator intr-o echipa
 export async function addUserToTeam(teamId, userId) {
 
@@ -139,9 +161,11 @@ export async function createProject(name, repo, teamId, userIds) {
             existingUsersIds.push(user.id)
         })
         console.log("Created project");
+        console.log(userIds)
+        console.log(existingUsersIds)
         if (userIds != null) {
             userIds.forEach(userId => {
-                if (!existingUsersIds.includes(userId)){
+                if (!existingUsersIds.includes(parseInt(userId))){
                     throw Error(`Invalid user id: ${userId}`)
                 }
                 ProjectUser.create({
@@ -227,6 +251,47 @@ export async function addUserAsTester(projectId, userId) {
             isTester: true
         })
         console.log("Tester added to project")
+
+        return existingUser;
+    }
+
+    export async function listBugs(userId, projectId) {
+
+        //verificam daca utilizatorul exista in baza de date
+
+        if(userId){
+            const existingUser = await User.findByPk(userId);
+            if(existingUser==null){
+                throw Error("This user does not exist")
+            }
+   
+               const bugs = []
+               const myProjectIds = ProjectUser.findAll({
+                   where: {
+                       userId: userId
+                   },
+                   attributes: ['id'],
+                   raw: true
+               })
+               bugs = Bug.findAll({
+                   where: {
+                       projectId: {in: myProjectIds}
+                   }
+               })
+               return bugs;
+        }
+        else if(projectId){
+            const existingProject = await Project.findByPk(projectId);
+            if(existingProject==null){
+                throw Error("This project does not exist");
+        }
+
+        return await Bug.findAll({
+            where: {projectId: projectId}
+        });
+
+        }
+        else return await Bug.findAll();
     }
 
 //adauga un bug intr-un proiect
@@ -323,4 +388,50 @@ export async function setBugIsFixed(bugId, commit) {
         await (await currentBug).save()
         return currentBug;
 }
+
+export async function login(email, password){
+
+    const user = await User.findOne({
+        where: {email: email,
+                 password: password}
+    })
+
+    if(user==null){
+        throw Error("User does not exist")
+    }
+
+
+     let token = await generateToken(30);
+     console.log(token)
+
+    user.token = token;
+    await (await user).save();
+
+    return user;
+}
+
+export async function loginByToken(token){
+
+    const user = await User.findAll({
+        where: {token: token}
+    })
+
+    if(user==null){
+        throw Error("User does not exist")
+    }
+
+    return user;
+}
+
+
+export async function generateToken(length) {
+    var result = ''; 
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'; 
+    var charactersLength = characters.length; 
+    for ( var i = 0; i < length; i++ ) {
+         result += characters.charAt(Math.floor(Math.random() * charactersLength)); }
+    return result; 
+} 
+    
+
 

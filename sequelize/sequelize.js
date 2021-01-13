@@ -40,7 +40,8 @@ User.init({
     email: DataTypes.STRING,
     password: DataTypes.STRING,
     firstName: DataTypes.STRING,
-    lastName: DataTypes.STRING
+    lastName: DataTypes.STRING,
+    token: DataTypes.STRING
 }, { sequelize: seqelize, modelName: "user" });
 
    //---Tabela de legatura pentru many to many intre user si team---//
